@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>年化收益率自动计算器</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        body { 
+            font-family: 'Noto Sans SC', system-ui, sans-serif; 
+            background: #f8fafc; 
+            margin: 0; 
+            padding: 12px; 
+        }
+        .card { 
+            max-width: 480px; 
+            margin: 16px auto; 
+            background: white; 
+            border-radius: 20px; 
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15); 
+            overflow: hidden; 
+        }
+        .header { 
+            text-align: center; 
+            padding: 20px 16px 14px; 
+            background: linear-gradient(135deg, #3b82f6, #1e40af); 
+            color: white; 
+        }
+        .header h1 { 
+            font-size: 20px; 
+            margin: 0; 
+        }
+        .mode { 
+            display: flex; 
+            margin: 14px 16px 0; 
+            border-radius: 9999px; 
+            background: #f1f5f9; 
+            padding: 3px; 
+        }
+        .mode-btn { 
+            flex: 1; 
+            padding: 8px; 
+            text-align: center; 
+            border-radius: 9999px; 
+            font-weight: 600; 
+            font-size: 14px;
+            cursor: pointer; 
+            transition: all 0.3s; 
+        }
+        .mode-btn.active { 
+            background: white; 
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); 
+            color: #1e40af; 
+        }
+        .form { padding: 14px 16px; }
+        .input-group { margin-bottom: 12px; }
+        .label { 
+            display: block; 
+            font-size: 13px; 
+            color: #64748b; 
+            margin-bottom: 4px; 
+        }
+        input, select { 
+            box-sizing: border-box;
+            width: 100%; 
+            padding: 10px 14px; 
+            font-size: 16px; 
+            border: 2px solid #e2e8f0; 
+            border-radius: 12px; 
+            outline: none; 
+            transition: border 0.2s; 
+        }
+        input:focus, select:focus { border-color: #3b82f6; }
+        .btn { 
+            width: 100%; 
+            background: #3b82f6; 
+            color: white; 
+            font-size: 16px; 
+            font-weight: 700; 
+            padding: 14px; 
+            border-radius: 9999px; 
+            border: none; 
+            cursor: pointer; 
+            margin-top: 8px; 
+            box-shadow: 0 10px 15px -3px rgb(59 130 246); 
+        }
+        .btn:active { transform: scale(0.98); }
+        .result { 
+            margin: 12px 16px; 
+            padding: 16px; 
+            background: #ecfdf5; 
+            border-radius: 16px; 
+            display: none; 
+        }
+        .result.show { display: block; }
+        .result-label { 
+            font-size: 14px; 
+            color: #10b981; 
+            font-weight: 600; 
+        }
+        .result-value { 
+            font-size: 32px; 
+            font-weight: 700; 
+            color: #052e16; 
+            margin: 4px 0; 
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <h1>年化收益率自动计算器</h1>
+            <p style="margin-top:4px;opacity:0.9;font-size:13px;">输入任意三个数值，自动算出第四个</p>
+        </div>
+
+        <div class="mode">
+            <div onclick="switchMode(0)" id="mode-single" class="mode-btn active">单利年化 (APR)</div>
+            <div onclick="switchMode(1)" id="mode-compound" class="mode-btn">复利年化 (APY)</div>
+        </div>
+
+        <div class="form">
+            <div class="input-group">
+                <div class="label">本金</div>
+                <input id="principal" type="text" placeholder="" value="">
+            </div>
+            <div class="input-group">
+                <div class="label">收益金额</div>
+                <input id="profit" type="text" placeholder="" value="">
+            </div>
+            <div class="input-group">
+                <div class="label">年化收益率</div>
+                <input id="annualized" type="text" placeholder="">
+            </div>
+            <div class="input-group">
+                <div class="label">时间</div>
+                <div style="display:flex;gap:12px;">
+                    <input id="time-value" type="text" placeholder="" value="" style="flex:1;">
+                    <select id="time-unit" style="width:auto;">
+                        <option value="d" selected>天</option>
+                        <option value="m">月</option>
+                        <option value="y">年</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="calculate()" class="btn">🚀 一键计算（自动识别缺失项）</button>
+        </div>
+
+        <div id="result" class="result">
+            <div class="result-label" id="result-label">✅ 年化收益率</div>
+            <div class="result-value" id="result-value"></div>
+            <div id="result-detail" style="color:#10b981;font-size:15px;"></div>
+            <button onclick="copyResult()" style="margin-top:10px;width:100%;padding:10px;background:white;color:#10b981;border:2px solid #10b981;border-radius:9999px;font-weight:600;font-size:14px;">📋 复制结果</button>
+        </div>
+
+        <div style="text-align:center;padding:12px 16px 20px;color:#64748b;font-size:12px;">
+            支持单利(APR)/复利(APY) • 任意三个已知 → 自动算第四个<br>
+            示例：本金100000、收益1800、30天 → 留年化空白即可
+        </div>
+    </div>
+
+    <script>
+        let isCompound = false;
+
+        function switchMode(mode) {
+            isCompound = mode === 1;
+            document.getElementById('mode-single').classList.toggle('active', !isCompound);
+            document.getElementById('mode-compound').classList.toggle('active', isCompound);
+        }
+
+        function calculate() {
+            const P_str = document.getElementById('principal').value.trim();
+            const profit_str = document.getElementById('profit').value.trim();
+            const A_str = document.getElementById('annualized').value.trim().replace('%','');
+            const time_val_str = document.getElementById('time-value').value.trim();
+            const unit = document.getElementById('time-unit').value;
+
+            let P = P_str ? parseFloat(P_str) : NaN;
+            let profit = profit_str ? parseFloat(profit_str) : NaN;
+            let A = A_str ? parseFloat(A_str)/100 : NaN;
+            let time_val = time_val_str ? parseFloat(time_val_str) : NaN;
+
+            let T = NaN;
+            if (!isNaN(time_val)) {
+                T = unit === 'd' ? time_val/365 : (unit === 'm' ? time_val/12 : time_val);
+            }
+
+            const missing = [];
+            if (isNaN(P)) missing.push('P');
+            if (isNaN(profit)) missing.push('profit');
+            if (isNaN(A)) missing.push('A');
+            if (isNaN(T)) missing.push('T');
+
+            if (missing.length !== 1) {
+                alert('❌ 请正好留一个空白项，其他三个必须填数字');
+                return;
+            }
+
+            let resultValue = '', resultLabel = '✅ 年化收益率', detail = '';
+
+            const R = (!isNaN(profit) && !isNaN(P)) ? profit / P : NaN;
+
+            if (missing[0] === 'A') {
+                if (isCompound) {
+                    A = Math.pow(1 + R, 1/T) - 1;
+                } else {
+                    A = R / T;
+                }
+                const aprApy = isCompound ? ' (APY)' : ' (APR)';
+                resultValue = (A * 100).toFixed(4) + '%' + aprApy;
+            }
+            else if (missing[0] === 'profit') {
+                if (isCompound) profit = P * (Math.pow(1 + A, T) - 1);
+                else profit = P * A * T;
+                resultValue = profit.toFixed(2);
+                resultLabel = '✅ 收益金额';
+            }
+            else if (missing[0] === 'P') {
+                if (isCompound) P = profit / (Math.pow(1 + A, T) - 1);
+                else P = profit / (A * T);
+                resultValue = P.toFixed(2);
+                resultLabel = '✅ 本金';
+            }
+            else if (missing[0] === 'T') {
+                const R_calc = profit / P;
+                if (isCompound) T = Math.log(1 + R_calc) / Math.log(1 + A);
+                else T = R_calc / A;
+                resultValue = T.toFixed(4) + ' 年';
+                detail = `≈ ${Math.round(T*365)} 天　≈ ${(T*12).toFixed(1)} 个月`;
+                resultLabel = '✅ 时间';
+            }
+
+            const res = document.getElementById('result');
+            document.getElementById('result-label').innerHTML = resultLabel;
+            document.getElementById('result-value').innerHTML = resultValue;
+            document.getElementById('result-detail').innerHTML = detail;
+            res.classList.add('show');
+        }
+
+        function copyResult() {
+            const text = document.getElementById('result-value').innerText;
+            navigator.clipboard.writeText(text).then(() => alert('✅ 已复制到剪贴板'));
+        }
+
+        document.addEventListener('keypress', e => { if (e.key === 'Enter') calculate(); });
+    </script>
+</body>
+</html>
